@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="No Pay No Gain">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/180x180.png?text=Game+Icon">
+  <!-- Include FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>No Pay No Gain</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+      color: #333;
+      text-align: center;
+      padding: 2rem;
+      margin: 0;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      margin-bottom: 2rem;
+      color: #0277bd;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .money { font-size: clamp(1.2rem, 4vw, 1.8rem); margin-bottom: 1.5rem; font-weight: bold; }
+    .dice-display { font-size: clamp(1rem, 3.5vw, 1.5rem); color: #0288d1; margin-bottom: 1.5rem; }
+    .timer { font-size: clamp(1rem, 3.5vw, 1.5rem); color: #d32f2f; margin-bottom: 2rem; font-weight: bold; }
+
+    .game-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 2rem;
+      justify-content: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      border: none;
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h3 { 
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      margin: 0 0 1rem;
+      color: #0277bd;
+    }
+    .card .icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #0288d1;
+    }
+    .card .info { 
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      margin: 0.5rem 0;
+      color: #555;
+    }
+
+    .card button {
+      padding: 0.75rem 1.5rem;
+      font-size: clamp(0.9rem, 3vw, 1rem);
+      border: none;
+      background: linear-gradient(135deg, #0288d1, #0277bd);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .card button:hover:not(:disabled) {
+      background: linear-gradient(135deg, #039be5, #0288d1);
+      transform: scale(1.05);
+    }
+
+    .card button:disabled {
+      background: #bdbdbd;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .summary {
+      grid-column: span 2;
+      text-align: left;
+      margin-top: 2rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary h2 {
+      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      color: #0277bd;
+      margin-bottom: 1rem;
+    }
+
+    .summary table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: clamp(0.85rem, 3vw, 1rem);
+    }
+
+    .summary th, .summary td {
+      border: 1px solid #e0e0e0;
+      padding: 1rem;
+    }
+
+    .summary th {
+      background: #f5f5f5;
+      color: #0277bd;
+    }
+
+    .actions {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .actions button {
+      padding: 0.75rem 2rem;
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+
+    .actions .confirm {
+      background: linear-gradient(135deg, #43a047, #388e3c);
+      color: white;
+    }
+    .actions .confirm:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4caf50, #43a047);
+      transform: scale(1.05);
+    }
+
+    .actions .reset {
+      background: linear-gradient(135deg, #ef5350, #d32f2f);
+      color: white;
+    }
+    .actions .reset:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f44336, #ef5350);
+      transform: scale(1.05);
+    }
+
+    .game-over { color: #d32f2f; font-weight: bold; }
+    .winner { color: #388e3c; font-weight: bold; }
+
+    #finish-page, #dice-roll-page {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    .finish-content, .dice-roll-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .finish-content h2, .dice-roll-content h2 {
+      color: #0277bd;
+      margin-bottom: 1rem;
+    }
+
+    .finish-content p {
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
+      color: #555;
+    }
+
+    .finish-content button {
+      padding: 0.75rem 2rem;
+      font-size: clamp(0.9rem, 3.5vw, 1rem);
+      background: linear-gradient(135deg, #43a047, #388e3c);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .finish-content button:hover {
+      background: linear-gradient(135deg, #4caf50, #43a047);
+      transform: scale(1.05);
+    }
+
+    /* Enhanced Dice Roll Animation */
+    .dice-rolling {
+      display: inline-block;
+      animation: diceRoll 0.1s infinite;
+      font-size: 4rem; /* Larger for the new page */
+      color: #0288d1;
+      will-change: transform;
+    }
+
+    @keyframes diceRoll {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.2); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    @media (max-width: 768px) {
+      .game-container {
+        grid-template-columns: 1fr;
+      }
+      .summary {
+        grid-column: span 1;
+      }
+      .actions {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      body {
+        padding: 1rem;
+      }
+    }
+
+    @supports (-webkit-overflow-scrolling: touch) {
+      #finish-page, #dice-roll-page {
+        position: absolute;
+        height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-page">
+    <h1>🎲 No Pay No Gain 🎲</h1>
+    <div class="money">💰 Money: $<span id="money">100</span></div>
+    <div class="dice-display">🎲 Dice Roll: <span id="dice-roll">0</span></div>
+    <div class="timer">⏰ Time Left: <span id="timer">15</span>s</div>
+
+    <div class="game-container" id="game-container"></div>
+
+    <div class="summary">
+      <h2>Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Investment</th>
+            <th>Cost</th>
+            <th>Profit</th>
+            <th>Interest</th>
+          </tr>
+        </thead>
+        <tbody id="summary-table"></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="confirm" id="confirm-button">✅ Confirm</button>
+      <button class="reset" id="reset-button">🗑️ Reset</button>
+    </div>
+  </div>
+
+  <div id="finish-page">
+    <div class="finish-content">
+      <h2>Game Over</h2>
+      <p id="finish-message">Don't give up! Every attempt is a step towards success. Try again!</p>
+      <p>Final Score: $<span id="final-score">0</span></p>
+      <button onclick="restartGame()">OK</button>
+    </div>
+  </div>
+
+  <div id="dice-roll-page">
+    <div class="dice-roll-content">
+      <h2>Rolling Dice...</h2>
+      <div id="dice-roll-animation">🎲 <span id="dice-roll-result">0</span></div>
+    </div>
+  </div>
+
+  <script>
+    const rounds = [
+      {
+        name: "First Round",
+        timeLimit: 15,
+        maxChoices: 2,
+        targetMoney: 120,
+        investments: [
+          { name: "Money Market Funds", icon: "fa-money-bill", dice: 3, profit: 35, cost: 25, interest: 15 },
+          { name: "Certificates of Deposit", icon: "fa-file-alt", dice: 5, profit: 40, cost: 25, interest: 20 },
+          { name: "Treasury Securities", icon: "fa-landmark", dice: 6, profit: 50, cost: 40, interest: 25 },
+          { name: "Bonds", icon: "fa-link", dice: 7, profit: 60, cost: 55, interest: 30 }
+        ]
+      },
+      {
+        name: "Second Round",
+        timeLimit: 30,
+        maxChoices: 3,
+        targetMoney: 200,
+        investments: [
+          { name: "Fixed Income Funds", icon: "fa-chart-bar", dice: 7, profit: 70, cost: 30, interest: 25 },
+          { name: "Mutual Funds", icon: "fa-users", dice: 6, profit: 80, cost: 35, interest: 20 },
+          { name: "Index Funds", icon: "fa-chart-line", dice: 5, profit: 80, cost: 50, interest: 15 },
+          { name: "Exchange-Traded Funds", icon: "fa-exchange-alt", dice: 4, profit: 60, cost: 55, interest: 30 }
+        ]
+      },
+      {
+        name: "Third Round",
+        timeLimit: 45,
+        maxChoices: 3,
+        targetMoney: Infinity,
+        investments: [
+          { name: "Short-Term Bond Funds", icon: "fa-clock", dice: 5, profit: 50, cost: 60, interest: 30 },
+          { name: "High-Yield Bond Funds", icon: "fa-arrow-up", dice: 6, profit: 70, cost: 70, interest: 35 },
+          { name: "Sector Funds", icon: "fa-industry", dice: 8, profit: 250, cost: 130, interest: 70 },
+          { name: "Crypto", icon: "fa-bitcoin", dice: 9, profit: 350, cost: 130, interest: 0 }
+        ]
+      }
+    ];
+
+    let currentRound = 0;
+    let money = 100;
+    let selectedInvestments = [];
+    let timer;
+    let timeLeft;
+
+    const gamePage = document.getElementById("game-page");
+    const finishPage = document.getElementById("finish-page");
+    const diceRollPage = document.getElementById("dice-roll-page");
+    const moneyDisplay = document.getElementById("money");
+    const diceRollDisplay = document.getElementById("dice-roll");
+    const timerDisplay = document.getElementById("timer");
+    const gameContainer = document.getElementById("game-container");
+    const summaryTable = document.getElementById("summary-table");
+    const confirmButton = document.getElementById("confirm-button");
+    const resetButton = document.getElementById("reset-button");
+    const finalScoreDisplay = document.getElementById("final-score");
+    const diceRollResult = document.getElementById("dice-roll-result");
+
+    function renderRound() {
+      const roundData = rounds[currentRound];
+      gameContainer.innerHTML = '';
+      roundData.investments.forEach((investment, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3>${investment.name}</h3>
+          <i class="fas ${investment.icon} icon"></i>
+          <div class="info">🎲 Dice: ${investment.dice}+</div>
+          <div class="info">💰 Profit: +$${investment.profit}</div>
+          <div class="info">📈 Cost: -$${investment.cost}</div>
+          <div class="info">🤑 Interest: +$${investment.interest}</div>
+          <button onclick="selectInvestment(${index}, ${investment.cost}, '${investment.name}')">Choose</button>
+        `;
+        gameContainer.appendChild(card);
+      });
+      startTimer();
+      updateGameState();
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timeLeft = rounds[currentRound].timeLimit;
+      timerDisplay.textContent = timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          showFinishPage();
+        }
+      }, 1000);
+    }
+
+    function disableButtons(disabled) {
+      const buttons = document.querySelectorAll('.card button');
+      buttons.forEach(button => button.disabled = disabled);
+    }
+
+    function updateGameState() {
+      const roundData = rounds[currentRound];
+      const minCost = Math.min(...roundData.investments.map(inv => inv.cost));
+      disableButtons(selectedInvestments.length >= roundData.maxChoices || money < minCost);
+      confirmButton.disabled = selectedInvestments.length === 0;
+    }
+
+    function selectInvestment(index, cost, name) {
+      const roundData = rounds[currentRound];
+      const sameTypeCount = selectedInvestments.filter(inv => inv.name === name).length;
+      
+      if (selectedInvestments.length >= roundData.maxChoices) {
+        alert("Maximum choices reached!");
+        return;
+      }
+      if (money < cost) {
+        alert("Not enough money for this investment!");
+        return;
+      }
+      if (sameTypeCount >= 2) {
+        alert("Cannot select the same investment more than twice!");
+        return;
+      }
+
+      selectedInvestments.push(roundData.investments[index]);
+      money -= cost;
+      updateMoneyDisplay();
+      updateSummary();
+      updateGameState();
+    }
+
+    function updateMoneyDisplay() {
+      moneyDisplay.textContent = money;
+      moneyDisplay.classList.remove('game-over', 'winner');
+      if (money <= 0) moneyDisplay.classList.add('game-over');
+    }
+
+    function updateSummary() {
+      summaryTable.innerHTML = '';
+      selectedInvestments.forEach((investment) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${investment.name}</td>
+          <td>-$${investment.cost}</td>
+          <td>+$${investment.profit}</td>
+          <td>+$${investment.interest}</td>
+        `;
+        summaryTable.appendChild(row);
+      });
+    }
+
+    function rollTwoDice(callback) {
+      diceRollResult.classList.add('dice-rolling');
+      let rolls = 0;
+      const animation = setInterval(() => {
+        const tempRoll = Math.floor(Math.random() * 11) + 2;
+        diceRollResult.textContent = tempRoll;
+        rolls++;
+        if (rolls >= 20) {
+          clearInterval(animation);
+          const finalRoll = Math.floor(Math.random() * 11) + 2;
+          diceRollResult.textContent = finalRoll;
+          diceRollResult.classList.remove('dice-rolling');
+          diceRollDisplay.textContent = finalRoll; // Update the main page display
+          setTimeout(() => {
+            diceRollPage.style.display = 'none';
+            gamePage.style.display = 'block';
+            callback(finalRoll);
+          }, 1000); // Delay to show the final result briefly
+        }
+      }, 50);
+    }
+
+    function confirmRound() {
+      clearInterval(timer);
+      confirmButton.disabled = true;
+      gamePage.style.display = 'none';
+      diceRollPage.style.display = 'block';
+      rollTwoDice((diceRoll) => {
+        let roundProfit = 0;
+        selectedInvestments.forEach((investment) => {
+          if (diceRoll >= investment.dice) {
+            roundProfit += investment.profit + investment.interest;
+          } else {
+            roundProfit += investment.interest;
+          }
+        });
+
+        money += roundProfit;
+        updateMoneyDisplay();
+        updateSummary();
+
+        const roundData = rounds[currentRound];
+        if (money <= 0) {
+          showFinishPage();
+        } else if (currentRound === 0 && money >= 120) {
+          currentRound++;
+          selectedInvestments = [];
+          renderRound();
+          alert(`Congratulations! Advancing to Round ${currentRound + 1}`);
+        } else if (currentRound === 1 && money >= 200) {
+          currentRound++;
+          selectedInvestments = [];
+          renderRound();
+          alert(`Congratulations! Advancing to Round ${currentRound + 1}`);
+        } else if (currentRound === 2) {
+          alert(`Game Complete! Final Score: $${money}`);
+          moneyDisplay.classList.add('winner');
+          disableButtons(true);
+          confirmButton.disabled = true;
+        } else {
+          showFinishPage();
+        }
+      });
+    }
+
+    function showFinishPage() {
+      gamePage.style.display = 'none';
+      diceRollPage.style.display = 'none';
+      finishPage.style.display = 'block';
+      finalScoreDisplay.textContent = money;
+    }
+
+    function restartGame() {
+      currentRound = 0;
+      money = 100;
+      selectedInvestments = [];
+      diceRollDisplay.textContent = "0";
+      gamePage.style.display = 'block';
+      finishPage.style.display = 'none';
+      diceRollPage.style.display = 'none';
+      renderRound();
+      updateMoneyDisplay();
+      updateSummary();
+      updateGameState();
+    }
+
+    confirmButton.addEventListener('click', confirmRound);
+    resetButton.addEventListener('click', restartGame);
+
+    renderRound();
+
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    });
+  </script>
+</body>
+</html>
